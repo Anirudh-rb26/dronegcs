@@ -6,15 +6,17 @@ A web-based ground control station for managing and monitoring drones.
 
 - **Frontend:**
 
-  - Next.js 13
+  - Next.js 15
   - TypeScript
   - Tailwind CSS
+  - shadcn/ui Components
+  - Leaflet.js for mapping
   - WebSocket Client
 
 - **Backend:**
-  - Node.js
+  - Node.js with Express
   - WebSocket Server
-  - MongoDB
+  - In-memory state management
 
 ## Setup Instructions
 
@@ -28,128 +30,66 @@ cd dronegcs
 2. Install dependencies (for both Frontend and Backend Folder)
 
 ```bash
-npm install
+cd Frontend && npm install
+cd ../Backend && npm install
 ```
 
-3. Start the WebSocket server (in a separate terminal)
-
-```bash
-node server.js
-```
-
-5. Run the Next.js development server (in another terminal)
+3. Start the WebSocket server (in Backend folder)
 
 ```bash
 npm run dev
 ```
 
-6. Access the application:
+4. Run the Next.js development server (in Frontend folder)
+
+```bash
+npm run dev
+```
+
+5. Access the application:
 
 - Frontend: http://localhost:3000
+- Backend: http://localhost:8080
 
 ## API Contract
 
-### WebSocket Events
+### WebSocket Communication
 
-1. Drone Connection
-
-```typescript
-// Connect drone
-emit("drone:connect", { droneId: string });
-
-// Drone connected response
-on("drone:connected", {
-  droneId: string,
-  status: "connected" | "error",
-});
-```
-
-2. Telemetry Data
+The WebSocket server sends drone state updates every 2 seconds with the following structure:
 
 ```typescript
-// Receive telemetry
-on("telemetry:update", {
-  droneId: string,
-  position: {
-    latitude: number,
-    longitude: number,
-    altitude: number,
-  },
-  battery: number,
-  speed: number,
-});
+// Drone State Structure
+{
+  battery: number; // Battery percentage (0-100)
+  latitude: number; // Current latitude
+  longitude: number; // Current longitude
+  altitude: number; // Current altitude in meters
+  status: "idle" | "in_mission" | "returning_home" | "landed";
+}
 ```
 
-3. Command Control
+### REST Endpoints
+
+1. Start Mission
 
 ```typescript
-// Send command
-emit("drone:command", {
-  droneId: string,
-  command: "takeoff" | "land" | "return" | "move",
-  params: {
-    altitude: number,
-    speed: number,
-  },
-});
+POST / start - mission;
+Response: {
+  message: string;
+  status: string;
+}
 ```
 
-## Architecture Diagrams
+2. Get Status
 
-### Data Flow Diagram
-
-```mermaid
-graph TB
-    U[User Interface] -->|Start Mission| N[Next.js API Route]
-    N -->|POST /start-mission| E[Express Server]
-    E -->|Update State| W[WebSocket Server]
-    W -->|Telemetry Updates| C[WebSocket Client]
-    C -->|State Updates| R[React Components]
-    R -->|Render| U
-
-    subgraph Backend
-        E
-        W
-        DS[Drone State]
-        W -->|Update| DS
-        DS -->|Read| W
-    end
-
-    subgraph Frontend
-        U
-        N
-        C
-        R
-    end
+```typescript
+GET / status;
+Response: DroneState;
 ```
 
-### Component Architecture
+## State Machine
 
-```mermaid
-graph TB
-    HP[HomePage] -->|Renders| DD[DroneDashboard]
-    DD -->|Renders| MD[MapDisplay]
-    DD -->|Renders| TW[Telemetry Widgets]
-    DD -->|Renders| CB[Control Buttons]
-
-    subgraph Components
-        DD
-        MD -->|Uses| LM[Leaflet Map]
-        TW -->|Displays| B[Battery]
-        TW -->|Displays| A[Altitude]
-        TW -->|Displays| G[GPS]
-        CB -->|Controls| SM[Start Mission]
-    end
-
-    subgraph State Management
-        WS[WebSocket Connection]
-        DS[Drone State]
-        WS -->|Updates| DS
-        DS -->|Triggers| DD
-    end
-```
-
-### State Machine Diagram
+The drone follows these state transitions:
 
 ```mermaid
 stateDiagram-v2
@@ -162,29 +102,16 @@ stateDiagram-v2
     Landed --> Idle: Reset
 ```
 
-### Sequence Diagram (Mission Start)
+## Features
 
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant F as Frontend
-    participant N as Next.js API
-    participant E as Express Server
-    participant W as WebSocket
-
-    U->>F: Click Start Mission
-    F->>N: POST /api/start-mission
-    N->>E: POST /start-mission
-    E->>W: Update Drone State
-    W->>F: Broadcast State Change
-    F->>U: Update UI
-
-    loop Every 2 seconds
-        E->>W: Update Telemetry
-        W->>F: Send Updates
-        F->>U: Render New State
-    end
-```
+- Real-time drone tracking on an interactive map
+- Live telemetry data including:
+  - Battery level
+  - Altitude
+  - GPS coordinates
+- Automatic return-to-home on low battery
+- Mission control capabilities
+- Dark/Light mode support
 
 ## Screenshots/Demo
 
