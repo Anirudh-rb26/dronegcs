@@ -25,7 +25,7 @@ git clone https://github.com/yourusername/dronegcs.git
 cd dronegcs
 ```
 
-2. Install dependencies
+2. Install dependencies (for both Frontend and Backend Folder)
 
 ```bash
 npm install
@@ -46,7 +46,6 @@ npm run dev
 6. Access the application:
 
 - Frontend: http://localhost:3000
-- WebSocket Server: ws://localhost:8080
 
 ## API Contract
 
