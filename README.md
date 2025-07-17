@@ -95,39 +95,96 @@ emit("drone:command", {
 });
 ```
 
-## Data Flow Diagram
+## Architecture Diagrams
 
-Create a data flow diagram using any diagram tool (e.g., draw.io, mermaid) showing:
-
-1. Components:
-
-   - Frontend (Next.js)
-   - WebSocket Server
-   - Database
-   - Drone Connection Manager
-
-2. Data Flow Directions:
-
-   - User Interface ↔ WebSocket Client
-   - WebSocket Client ↔ WebSocket Server
-   - WebSocket Server ↔ Drone Connection Manager
-   - WebSocket Server ↔ Database
-
-3. Key Operations:
-   - User commands
-   - Telemetry updates
-   - Database operations
-   - Real-time data flow
-
-Example Mermaid Diagram:
+### Data Flow Diagram
 
 ```mermaid
-graph LR
-    A[Frontend] -->|Commands| B[WebSocket Server]
-    B -->|Status Updates| A
-    B -->|Store Data| C[MongoDB]
-    B -->|Drone Commands| D[Drone Manager]
-    D -->|Telemetry| B
+graph TB
+    U[User Interface] -->|Start Mission| N[Next.js API Route]
+    N -->|POST /start-mission| E[Express Server]
+    E -->|Update State| W[WebSocket Server]
+    W -->|Telemetry Updates| C[WebSocket Client]
+    C -->|State Updates| R[React Components]
+    R -->|Render| U
+
+    subgraph Backend
+        E
+        W
+        DS[Drone State]
+        W -->|Update| DS
+        DS -->|Read| W
+    end
+
+    subgraph Frontend
+        U
+        N
+        C
+        R
+    end
+```
+
+### Component Architecture
+
+```mermaid
+graph TB
+    HP[HomePage] -->|Renders| DD[DroneDashboard]
+    DD -->|Renders| MD[MapDisplay]
+    DD -->|Renders| TW[Telemetry Widgets]
+    DD -->|Renders| CB[Control Buttons]
+
+    subgraph Components
+        DD
+        MD -->|Uses| LM[Leaflet Map]
+        TW -->|Displays| B[Battery]
+        TW -->|Displays| A[Altitude]
+        TW -->|Displays| G[GPS]
+        CB -->|Controls| SM[Start Mission]
+    end
+
+    subgraph State Management
+        WS[WebSocket Connection]
+        DS[Drone State]
+        WS -->|Updates| DS
+        DS -->|Triggers| DD
+    end
+```
+
+### State Machine Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> InMission: Start Mission
+    InMission --> ReturningHome: Battery <= 25%
+    InMission --> Landed: Mission Complete
+    ReturningHome --> Landed: Altitude <= 1m
+    ReturningHome --> Landed: Battery <= 0
+    Landed --> Idle: Reset
+```
+
+### Sequence Diagram (Mission Start)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant N as Next.js API
+    participant E as Express Server
+    participant W as WebSocket
+
+    U->>F: Click Start Mission
+    F->>N: POST /api/start-mission
+    N->>E: POST /start-mission
+    E->>W: Update Drone State
+    W->>F: Broadcast State Change
+    F->>U: Update UI
+
+    loop Every 2 seconds
+        E->>W: Update Telemetry
+        W->>F: Send Updates
+        F->>U: Render New State
+    end
 ```
 
 ## Screenshots/Demo
