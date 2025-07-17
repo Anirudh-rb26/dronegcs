@@ -132,4 +132,8 @@ graph LR
 
 ## Screenshots/Demo
 
-[Add screenshots or demo video links once the application is developed]
+### Dashboard View
+
+![App-Screenshot]("./images/images/Screenshot 2025-07-17 225451.png")
+![App-Screenshot]("./images/images/Screenshot 2025-07-17 225544.png")
+![App-Screenshot]("./images/images/Screenshot 2025-07-17 230115.png")
