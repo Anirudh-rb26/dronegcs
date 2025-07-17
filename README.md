@@ -23,7 +23,7 @@ A web-based ground control station for managing and monitoring drones.
 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/dronegcs.git
+git clone https://github.com/Anirudh-rb26/dronegcs.git
 cd dronegcs
 ```
 
