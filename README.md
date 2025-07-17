@@ -1,36 +1,135 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DroneGCS (Ground Control Station)
 
-## Getting Started
+A web-based ground control station for managing and monitoring drones.
 
-First, run the development server:
+## Tech Stack
+
+- **Frontend:**
+
+  - Next.js 13
+  - TypeScript
+  - Tailwind CSS
+  - WebSocket Client
+
+- **Backend:**
+  - Node.js
+  - WebSocket Server
+  - MongoDB
+
+## Setup Instructions
+
+1. Clone the repository
+
+```bash
+git clone https://github.com/yourusername/dronegcs.git
+cd dronegcs
+```
+
+2. Install dependencies
+
+```bash
+npm install
+```
+
+3. Start the WebSocket server (in a separate terminal)
+
+```bash
+node server.js
+```
+
+5. Run the Next.js development server (in another terminal)
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+6. Access the application:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Frontend: http://localhost:3000
+- WebSocket Server: ws://localhost:8080
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API Contract
 
-## Learn More
+### WebSocket Events
 
-To learn more about Next.js, take a look at the following resources:
+1. Drone Connection
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```typescript
+// Connect drone
+emit("drone:connect", { droneId: string });
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+// Drone connected response
+on("drone:connected", {
+  droneId: string,
+  status: "connected" | "error",
+});
+```
 
-## Deploy on Vercel
+2. Telemetry Data
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```typescript
+// Receive telemetry
+on("telemetry:update", {
+  droneId: string,
+  position: {
+    latitude: number,
+    longitude: number,
+    altitude: number,
+  },
+  battery: number,
+  speed: number,
+});
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. Command Control
+
+```typescript
+// Send command
+emit("drone:command", {
+  droneId: string,
+  command: "takeoff" | "land" | "return" | "move",
+  params: {
+    altitude: number,
+    speed: number,
+  },
+});
+```
+
+## Data Flow Diagram
+
+Create a data flow diagram using any diagram tool (e.g., draw.io, mermaid) showing:
+
+1. Components:
+
+   - Frontend (Next.js)
+   - WebSocket Server
+   - Database
+   - Drone Connection Manager
+
+2. Data Flow Directions:
+
+   - User Interface ↔ WebSocket Client
+   - WebSocket Client ↔ WebSocket Server
+   - WebSocket Server ↔ Drone Connection Manager
+   - WebSocket Server ↔ Database
+
+3. Key Operations:
+   - User commands
+   - Telemetry updates
+   - Database operations
+   - Real-time data flow
+
+Example Mermaid Diagram:
+
+```mermaid
+graph LR
+    A[Frontend] -->|Commands| B[WebSocket Server]
+    B -->|Status Updates| A
+    B -->|Store Data| C[MongoDB]
+    B -->|Drone Commands| D[Drone Manager]
+    D -->|Telemetry| B
+```
+
+## Screenshots/Demo
+
+[Add screenshots or demo video links once the application is developed]

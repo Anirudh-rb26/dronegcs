@@ -4,8 +4,9 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { BatteryCharging, MapPin, Mountain, Play, AlertTriangle } from "lucide-react"
+import { BatteryCharging, MapPin, Mountain, Play, AlertTriangle, WifiOff } from "lucide-react"
 import { cn } from "@/lib/utils" // Assuming cn utility is available
+import { MapDisplay } from "./map-display" // Import the new MapDisplay component
 
 interface DroneTelemetry {
   battery: number
@@ -96,64 +97,85 @@ export function DroneDashboard() {
   const isBatteryLow = droneData.battery < 25 && droneData.battery > 0
 
   return (
-    <Card className="w-full max-w-md shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div>
-          <CardTitle className="text-2xl font-bold">Drone GCS Dashboard</CardTitle>
-          <CardDescription>Real-time telemetry and mission control</CardDescription>
+    <Card className="w-full rounded-xl shadow-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50 flex flex-col lg:flex-row">
+      <CardHeader className="flex flex-col items-start p-8 lg:w-1/3 lg:border-r lg:border-gray-200 dark:lg:border-gray-700">
+        <div className="flex items-center justify-between w-full mb-4">
+          <CardTitle className="text-4xl font-extrabold tracking-tight">Drone GCS</CardTitle>
+          <Badge
+            className={cn(
+              "px-4 py-2 text-base font-bold rounded-full shadow-md",
+              getStatusBadgeColor(droneData.status),
+            )}
+          >
+            {droneData.status.replace(/_/g, " ").toUpperCase()}
+          </Badge>
         </div>
-        <Badge className={cn("px-3 py-1 text-sm font-semibold", getStatusBadgeColor(droneData.status))}>
-          {droneData.status.replace(/_/g, " ").toUpperCase()}
-        </Badge>
-      </CardHeader>
-      <CardContent className="grid gap-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex items-center gap-3">
+        <CardDescription className="text-gray-600 dark:text-gray-400 text-lg mb-6">
+          Real-time telemetry and mission control for your drone.
+        </CardDescription>
+
+        <div className="grid grid-cols-1 gap-6 w-full">
+          <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm">
             <BatteryCharging
               className={cn(
-                "h-6 w-6",
-                isBatteryLow ? "text-red-500 animate-pulse" : "text-gray-500 dark:text-gray-400",
+                "h-10 w-10 transition-colors duration-300",
+                isBatteryLow ? "text-red-500 animate-pulse" : "text-green-500",
               )}
             />
-            <div className={cn("text-xl font-semibold", isBatteryLow && "text-red-500")}>
-              Battery: {droneData.battery.toFixed(1)}%
+            <div className="flex flex-col">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Battery</span>
+              <span className={cn("text-3xl font-bold", isBatteryLow && "text-red-500")}>
+                {droneData.battery.toFixed(1)}%
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Mountain className="h-6 w-6 text-gray-500 dark:text-gray-400" />
-            <div className="text-xl font-semibold">Altitude: {droneData.altitude.toFixed(1)}m</div>
+          <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm">
+            <Mountain className="h-10 w-10 text-blue-500" />
+            <div className="flex flex-col">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Altitude</span>
+              <span className="text-3xl font-bold">{droneData.altitude.toFixed(1)}m</span>
+            </div>
           </div>
-          <div className="flex items-center gap-3 col-span-full">
-            <MapPin className="h-6 w-6 text-gray-500 dark:text-gray-400" />
-            <div className="text-xl font-semibold">
-              GPS: {droneData.latitude.toFixed(4)}, {droneData.longitude.toFixed(4)}
+          <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm">
+            <MapPin className="h-10 w-10 text-purple-500" />
+            <div className="flex flex-col">
+              <span className="text-sm text-gray-500 dark:text-gray-400">GPS Coordinates</span>
+              <span className="text-2xl font-bold">
+                {droneData.latitude.toFixed(4)}, {droneData.longitude.toFixed(4)}
+              </span>
             </div>
           </div>
         </div>
 
+        <CardFooter className="p-0 pt-6 w-full">
+          <Button
+            onClick={handleStartMission}
+            disabled={droneData.status === "in_mission" || !wsConnected}
+            className="w-full py-4 text-xl font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            <Play className="mr-3 h-6 w-6" />
+            Start Mission
+          </Button>
+        </CardFooter>
+      </CardHeader>
+
+      <CardContent className="flex-1 p-8 flex flex-col gap-6">
         {isBatteryLow && (
-          <div className="flex items-center gap-2 text-red-500 font-medium bg-red-50 border border-red-200 p-3 rounded-md">
-            <AlertTriangle className="h-5 w-5" />
-            <span>Low Battery! Returning to base.</span>
+          <div className="flex items-center gap-3 text-red-600 dark:text-red-400 font-medium bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-700 p-4 rounded-lg shadow-md animate-fade-in">
+            <AlertTriangle className="h-7 w-7 flex-shrink-0" />
+            <span className="text-lg">Low Battery! Drone is returning to base.</span>
           </div>
         )}
 
         {!wsConnected && (
-          <p className="text-center text-sm text-red-500">
-            WebSocket disconnected. Please ensure the backend server is running.
-          </p>
+          <div className="flex items-center gap-3 text-orange-600 dark:text-orange-400 font-medium bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-700 p-4 rounded-lg shadow-md">
+            <WifiOff className="h-7 w-7 flex-shrink-0" />
+            <span className="text-lg">WebSocket disconnected. Please ensure the backend server is running.</span>
+          </div>
         )}
+
+        <MapDisplay latitude={droneData.latitude} longitude={droneData.longitude} />
       </CardContent>
-      <CardFooter className="pt-4">
-        <Button
-          onClick={handleStartMission}
-          disabled={droneData.status === "in_mission" || !wsConnected}
-          className="w-full"
-        >
-          <Play className="mr-2 h-4 w-4" />
-          Start Mission
-        </Button>
-      </CardFooter>
     </Card>
   )
 }
